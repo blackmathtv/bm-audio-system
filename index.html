@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BM Audio System</title>
+    <style>
+        @font-face {
+            font-family: 'PP Valve';
+            src: url('fonts/PPValve-PlainLight.otf') format('opentype'),
+                 url('fonts/PPValve-PlainLight.ttf') format('truetype');
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --display-family: 'PP Valve', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --mono-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(235, 235, 245, 0.60);
+            --text-tertiary: rgba(235, 235, 245, 0.38);
+            --bm-grey: #919491;
+            --info-gap: 36px;
+            --grid-size: 380px;
+            --eq-cols: 13;
+            --eq-segs: 6;
+            --eq-seg-size: 14px;
+            --eq-gap: 6px;
+            --eq-pad: 6px;
+            --eq-width: calc(var(--eq-cols) * var(--eq-seg-size) + (var(--eq-cols) + 1) * var(--eq-gap) + 2 * var(--eq-pad));
+            --eq-height: calc(var(--eq-segs) * var(--eq-seg-size) + 2 * var(--eq-pad));
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .container {
+            display: flex;
+            align-items: flex-start;
+            gap: 100px;
+            max-width: 1600px;
+            padding: 40px;
+        }
+
+        /* Fluid Spring Stage */
+        #stage {
+            position: relative;
+            width: var(--grid-size);
+            height: var(--grid-size);
+            touch-action: none;
+            overflow: hidden;
+            box-shadow: 0 0 0 2px var(--bm-grey);
+        }
+
+        .block {
+            position: absolute;
+            cursor: pointer;
+            will-change: left, top, width, height;
+        }
+
+        /* Color Definitions */
+        .c-white { background-color: #FFFFFF; }
+        .c-beige { background-color: #C7B299; }
+        .c-grey { background-color: #919491; }
+        .c-yellow { background-color: #FFEE00; }
+        .c-carrot { background-color: #FF6600; }
+        .c-red { background-color: #E03535; }
+        .c-pink { background-color: #FFD6DF; }
+        .c-green { background-color: #008535; }
+        .c-black { background-color: #000000; box-shadow: inset 0 0 0 2px #1a1a1a; }
+        .c-linen { background-color: #EFE1E0; }
+        .c-purple { background-color: #BA9BC9; }
+        .c-blue { background-color: #0096DE; }
+        .c-universe { background: linear-gradient(to right, #FFEE00, #FFB905, #FF6600, #E77946, #BB9BCA, #5C8ECB, #0288AB, #028535); }
+
+        /* Info Panel Styles */
+        .info-panel {
+            width: 480px;
+            min-height: calc(var(--grid-size) + 2px);
+            display: flex;
+            flex-direction: column;
+            gap: var(--info-gap);
+        }
+
+        .header-area {
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+            min-height: 80px;
+        }
+
+        .color-info {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding-left: 96px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .color-info.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .info-swatch {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 32px;
+            align-items: start;
+        }
+
+        .info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* Type scale */
+        .info-label {
+            font-size: 11px;
+            font-weight: 590;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            line-height: 1;
+        }
+
+        .info-name {
+            font-family: var(--display-family);
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            line-height: 1.05;
+            color: var(--text-primary);
+        }
+
+        .info-hex {
+            font-family: var(--mono-family);
+            font-size: 15px;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .info-spec {
+            font-family: var(--mono-family);
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .info-subhead {
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+            color: var(--text-primary);
+        }
+
+        .personality-desc {
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            min-height: calc(1.5em * 2);
+        }
+
+        .neighbor-swatches {
+            display: flex;
+            gap: 6px;
+        }
+
+        .neighbor-swatch {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+        }
+
+        /* Initial Messaging */
+        .instruction-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--info-gap);
+            transition: opacity 0.3s ease;
+            position: absolute;
+            top: 0;
+        }
+
+        .instruction-group.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .main-msg {
+            font-family: var(--display-family);
+            font-size: 44px;
+            line-height: 1.05;
+            max-width: 440px;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-top: -10px;
+        }
+
+        .sub-msg {
+            font-size: 11px;
+            font-weight: 590;
+            letter-spacing: 0.12em;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+        }
+
+        /* Visualizer */
+        .visualizer-outer {
+            width: var(--eq-width);
+            height: var(--eq-height);
+            background-color: #1e1e1e;
+            padding: var(--eq-pad);
+            display: flex;
+            box-sizing: border-box;
+            margin-top: auto;
+            transform: translateY(calc(-1 * (var(--eq-pad) - 2px)));
+        }
+
+        .visualizer-inner {
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            padding: 0 var(--eq-gap);
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: var(--eq-gap);
+            box-sizing: border-box;
+        }
+
+        .viz-column {
+            width: var(--eq-seg-size);
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 0;
+            height: 100%;
+        }
+
+        .viz-segment {
+            width: var(--eq-seg-size);
+            height: var(--eq-seg-size);
+            opacity: 0;
+            transition: opacity 0.05s ease;
+        }
+
+        .viz-segment.active {
+            opacity: 1;
+        }
+
+        /* Mobile: stack logo on top, info below */
+        @media (max-width: 900px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+                align-items: flex-start;
+            }
+
+            .container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 48px;
+                padding: 24px;
+                max-width: 100%;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            :root {
+                --grid-size: min(380px, calc(100vw - 48px));
+            }
+
+            .info-panel {
+                min-width: 0;
+                min-height: 0;
+                width: 100%;
+            }
+
+            .visualizer-outer {
+                margin-top: 0;
+                transform: none;
+            }
+
+            .main-msg {
+                font-size: 36px;
+            }
+
+            .color-info {
+                padding-left: 72px;
+                gap: 28px;
+            }
+
+            .info-row {
+                column-gap: 20px;
+            }
+
+            .info-swatch {
+                width: 48px;
+                height: 48px;
+            }
+
+            .info-name {
+                font-size: 24px;
+            }
+
+            .info-subhead {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="stage"></div>
+
+        <div class="info-panel">
+            <div class="header-area">
+                <div class="instruction-group" id="instructionGroup">
+                    <div class="main-msg">The computer is<br>a conglomerate<br>of all its parts</div>
+                    <div class="sub-msg">&lt; SELECT ONE TO EXPERIENCE IT</div>
+                </div>
+
+                <div class="color-info" id="colorInfo">
+                    <div class="info-swatch" id="infoSwatch"></div>
+
+                    <div class="info-row">
+                        <div class="info-group">
+                            <div class="info-label">NAME</div>
+                            <div class="info-name" id="infoName"></div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">VALUE</div>
+                            <div class="info-hex" id="infoHex"></div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-group">
+                            <div class="info-label">SOUND</div>
+                            <div class="info-spec" id="infoSound"></div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">GRID</div>
+                            <div class="info-spec" id="infoGrid"></div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-group">
+                            <div class="info-label">PERSONALITY</div>
+                            <div class="info-subhead" id="infoPersLabel"></div>
+                            <div class="personality-desc" id="infoPersDesc"></div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">NEIGHBORS</div>
+                            <div class="neighbor-swatches" id="infoNeighbors"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualizer-outer">
+                <div class="visualizer-inner" id="visualizer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BLOCK_DATA = [
+            { id: "white", name: "White", hex: "#FFFFFF", row: 0, col: 0, span: 2, freq: 880, type: "sine", decay: 0.4, file: "audio/3 White.wav", personality: { label: "Feather", desc: "Weightless. Drifts like dust in light." } },
+            { id: "beige", name: "Beige", hex: "#C7B299", row: 0, col: 2, span: 2, freq: 330, type: "triangle", decay: 0.5, file: "audio/10 Beige.wav", personality: { label: "Stone", desc: "Heavy. Moves slow, settles deep." } },
+            { id: "grey", name: "Grey", hex: "#919491", row: 0, col: 4, span: 2, freq: 220, type: "sawtooth", decay: 0.6, file: "audio/2 Grey.wav", personality: { label: "Fog", desc: "Drifts. Fades into position." } },
+            { id: "yellow", name: "Yellow", hex: "#FFEE00", row: 1, col: 0, span: 2, freq: 660, type: "square", decay: 0.25, file: "audio/4 Yellow.wav", personality: { label: "Spark", desc: "Quick snap. Electric return." } },
+            { id: "carrot", name: "Carrot", hex: "#FF6600", row: 1, col: 2, span: 1, freq: 440, type: "sawtooth", decay: 0.35, file: "audio/6 Carrot.wav", personality: { label: "Flame", desc: "Wobbly heat. Restless energy." } },
+            { id: "red", name: "Red", hex: "#E03535", row: 1, col: 3, span: 1, freq: 523, type: "square", decay: 0.2, file: "audio/12 Red.wav", personality: { label: "Pulse", desc: "Sharp. Snaps back hard." } },
+            { id: "pink", name: "Pink", hex: "#FFD6DF", row: 1, col: 4, span: 1, freq: 784, type: "sine", decay: 0.5, file: "audio/9 Pink.wav", personality: { label: "Cloud", desc: "Soft drift. Gentle return." } },
+            { id: "green", name: "Green", hex: "#008535", row: 1, col: 5, span: 1, freq: 196, type: "triangle", decay: 0.6, file: "audio/11 Green.wav", personality: { label: "Root", desc: "Grounded. Barely moves, anchored." } },
+            { id: "black", name: "Black", hex: "#000000", row: 2, col: 0, span: 2, freq: 110, type: "sawtooth", decay: 0.7, file: "audio/1 Black.wav", personality: { label: "Void", desc: "Absorbs force. Barely stirs." } },
+            { id: "linen", name: "Light Beige", hex: "#EFE1E0", row: 2, col: 2, span: 1, freq: 587, type: "sine", decay: 0.4, file: "audio/7 Linen.wav", personality: { label: "Silk", desc: "Smooth glide. Graceful settle." } },
+            { id: "purple", name: "Purple", hex: "#BA9BC9", row: 2, col: 3, span: 1, freq: 698, type: "sine", decay: 0.5, file: "audio/8 Purple.wav", personality: { label: "Dream", desc: "Floaty. Slow, ethereal movement." } },
+            { id: "blue", name: "Blue", hex: "#0096DE", row: 2, col: 4, span: 1, freq: 392, type: "triangle", decay: 0.35, file: "audio/5 Blue.wav", personality: { label: "Wave", desc: "Fluid oscillation. Rides back in." } },
+            { id: "universe", name: "BM Universe", hex: "MIXED", row: 2, col: 5, span: 1, freq: 440, type: "sine", decay: 0.6, file: "audio/13 BM Universe.wav", gradient: "linear-gradient(to right, #FFEE00, #FFB905, #FF6600, #E77946, #BB9BCA, #5C8ECB, #0288AB, #028535)", personality: { label: "Prism", desc: "Unpredictable. Refracts force in wild angles." } }
+        ];
+
+        const VIZ_PALETTE = ["#028535","#0096DD","#FD322B","#FF6600","#FFEE00","#919491","#F5F5F7","#F5F5F7"];
+
+        // Spring State
+        let hasInteracted = false;
+        const activePointers = new Map();
+        const activeSet = new Set();
+        function recomputeActive() {
+            activeSet.clear();
+            for (const v of activePointers.values()) if (v !== null) activeSet.add(v);
+        }
+        const weights = { rows: [1, 1, 1], cols: [1, 1, 1, 1, 1, 1], rv: [0,0,0], cv: [0,0,0,0,0,0] };
+        const RESP = 0.38, DAMP = 0.82, DT = 0.016, K = (4 * Math.PI * Math.PI) / (RESP * RESP), C = (4 * Math.PI * DAMP) / RESP, SCALE_FACTOR = 1.65;
+        const GRID_SIZE = 380;
+
+        const stage = document.getElementById('stage');
+        const instructionGroup = document.getElementById('instructionGroup');
+        const colorInfo = document.getElementById('colorInfo');
+        const infoSwatch = document.getElementById('infoSwatch');
+        const infoName = document.getElementById('infoName');
+        const infoSound = document.getElementById('infoSound');
+        const infoGrid = document.getElementById('infoGrid');
+        const infoHex = document.getElementById('infoHex');
+        const infoPersLabel = document.getElementById('infoPersLabel');
+        const infoPersDesc = document.getElementById('infoPersDesc');
+        const infoNeighbors = document.getElementById('infoNeighbors');
+
+        const blocks = BLOCK_DATA.map((b, i) => {
+            const el = document.createElement('div');
+            el.className = `block c-${b.id}`;
+            el.dataset.idx = i;
+            stage.appendChild(el);
+            return el;
+        });
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.connect(audioCtx.destination);
+
+        const audioBuffers = new Map();
+        const activeSources = new Map();
+
+        function loadBuffer(b) {
+            if (!audioBuffers.has(b.id)) {
+                audioBuffers.set(b.id,
+                    fetch(b.file).then(r => r.arrayBuffer()).then(a => audioCtx.decodeAudioData(a))
+                );
+            }
+            return audioBuffers.get(b.id);
+        }
+
+        BLOCK_DATA.forEach(loadBuffer);
+
+        async function playSound(idx) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            hasInteracted = true;
+            const b = BLOCK_DATA[idx];
+            instructionGroup.classList.add('hidden');
+            colorInfo.classList.add('visible');
+            infoSwatch.className = `info-swatch c-${b.id}`;
+            infoName.textContent = b.name;
+            infoSound.textContent = `${b.freq}hz ${b.type}`;
+            infoGrid.textContent = `R${b.row+1} C${b.col+1}${b.span>1 ? '-'+(b.col+b.span) : ''}`;
+            infoHex.textContent = b.hex;
+            infoPersLabel.textContent = b.personality.label;
+            infoPersDesc.textContent = b.personality.desc;
+            infoNeighbors.innerHTML = '';
+            const bCols = Array.from({length: b.span}, (_, i) => b.col + i);
+            BLOCK_DATA.forEach((o, i) => {
+                if (i === idx) return;
+                const oCols = Array.from({length: o.span}, (_, i) => o.col + i);
+                if (bCols.some(c => oCols.includes(c)) && Math.abs(b.row - o.row) <= 1 || (b.row === o.row && Math.abs(b.col - o.col) <= b.span)) {
+                    const s = document.createElement('div');
+                    s.className = `neighbor-swatch c-${o.id}`;
+                    infoNeighbors.appendChild(s);
+                }
+            });
+            try {
+                const buf = await loadBuffer(b);
+                const now = audioCtx.currentTime;
+                const prev = activeSources.get(b.id);
+                if (prev) {
+                    const fade = 0.03;
+                    prev.gain.gain.cancelScheduledValues(now);
+                    prev.gain.gain.setValueAtTime(prev.gain.gain.value, now);
+                    prev.gain.gain.linearRampToValueAtTime(0, now + fade);
+                    try { prev.src.stop(now + fade + 0.01); } catch (e) {}
+                }
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(1, now);
+                const src = audioCtx.createBufferSource();
+                src.buffer = buf;
+                src.connect(gain);
+                gain.connect(analyser);
+                src.start(now);
+                activeSources.set(b.id, { src, gain });
+                src.onended = () => {
+                    if (activeSources.get(b.id)?.src === src) activeSources.delete(b.id);
+                };
+            } catch (e) {
+                console.error('Audio playback failed', b.file, e);
+            }
+        }
+
+        const vizInner = document.getElementById('visualizer');
+        const rootStyle = getComputedStyle(document.documentElement);
+        const numCols = parseInt(rootStyle.getPropertyValue('--eq-cols')) || 9;
+        const numSegs = parseInt(rootStyle.getPropertyValue('--eq-segs')) || 6;
+        const segColor = j => VIZ_PALETTE[Math.min(j, VIZ_PALETTE.length - 1)];
+        const columns = Array.from({length: numCols}, () => {
+            const col = document.createElement('div');
+            col.className = 'viz-column';
+            const segs = Array.from({length: numSegs}, (_, j) => {
+                const s = document.createElement('div');
+                s.className = 'viz-segment';
+                s.style.backgroundColor = segColor(j);
+                col.appendChild(s);
+                return s;
+            });
+            vizInner.appendChild(col);
+            return segs;
+        });
+
+        function loop() {
+            const targetR = [1, 1, 1], targetC = [1, 1, 1, 1, 1, 1];
+            for (const idx of activeSet) {
+                const b = BLOCK_DATA[idx];
+                targetR[b.row] = SCALE_FACTOR;
+                for (let i = 0; i < b.span; i++) targetC[b.col + i] = SCALE_FACTOR;
+            }
+            for (let i = 0; i < 3; i++) {
+                const f = -K * (weights.rows[i] - targetR[i]) - C * weights.rv[i];
+                weights.rv[i] += f * DT; weights.rows[i] += weights.rv[i] * DT;
+            }
+            for (let i = 0; i < 6; i++) {
+                const f = -K * (weights.cols[i] - targetC[i]) - C * weights.cv[i];
+                weights.cv[i] += f * DT; weights.cols[i] += weights.cv[i] * DT;
+            }
+            const rSum = weights.rows.reduce((a, b) => a + b, 0), cSum = weights.cols.reduce((a, b) => a + b, 0);
+            let curY = 0;
+            const rowOffsets = weights.rows.map(w => {
+                const h = (w / rSum) * GRID_SIZE;
+                const y = curY; curY += h;
+                return { y, h };
+            });
+            let curX = 0;
+            const colOffsets = weights.cols.map(w => {
+                const wd = (w / cSum) * GRID_SIZE;
+                const x = curX; curX += wd;
+                return { x, wd };
+            });
+
+            BLOCK_DATA.forEach((b, i) => {
+                let bw = 0; for (let j = 0; j < b.span; j++) bw += colOffsets[b.col + j].wd;
+                const el = blocks[i];
+                el.style.left = `${colOffsets[b.col].x}px`;
+                el.style.top = `${rowOffsets[b.row].y}px`;
+                el.style.width = `${bw + 1}px`;
+                el.style.height = `${rowOffsets[b.row].h + 1}px`;
+                el.style.zIndex = activeSet.has(i) ? 10 : 1;
+            });
+
+            let signal = 0;
+            if (hasInteracted && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                for (let i = 0; i < dataArray.length; i++) signal += dataArray[i];
+            }
+            if (signal > 40) {
+                // Audio playing: reactive analyser bars
+                columns.forEach((segs, i) => {
+                    const val = dataArray[Math.floor(i * (dataArray.length / numCols) * 0.7)];
+                    const count = Math.max(1, Math.floor((val / 255) * numSegs) + (val > 10 ? 1 : 0));
+                    segs.forEach((s, j) => s.classList.toggle('active', j < count));
+                });
+            } else if (!hasInteracted) {
+                // Pre-interaction: animated idle (breath/sweep/heartbeat/standing wave)
+                const t = performance.now() / 1000;
+                const PATTERN_DURATION = 6;
+                const FADE_DURATION = 1.2;
+                const cycleT = t % PATTERN_DURATION;
+                const patternIdx = Math.floor(t / PATTERN_DURATION) % 4;
+                const nextIdx = (patternIdx + 1) % 4;
+                let blend = 0;
+                if (cycleT > PATTERN_DURATION - FADE_DURATION) {
+                    const raw = (cycleT - (PATTERN_DURATION - FADE_DURATION)) / FADE_DURATION;
+                    blend = raw * raw * (3 - 2 * raw);
+                }
+                const patterns = [
+                    (x, t) => {
+                        const breath = (Math.sin(t * 1.2) + 1) / 2;
+                        const wave = (Math.sin(t * 1.8 - x * Math.PI * 1.5) + 1) / 2;
+                        return breath * 0.6 + wave * 0.4;
+                    },
+                    (x, t) => {
+                        const sweep = (Math.sin(t * 1.5) + 1) / 2;
+                        const dist = Math.abs(x - sweep);
+                        return Math.max(0, 1 - dist * 3);
+                    },
+                    (x, t) => {
+                        const beat = t % 1.4;
+                        let pulse = 0;
+                        if (beat < 0.12) pulse = beat / 0.12;
+                        else if (beat < 0.24) pulse = 1 - (beat - 0.12) / 0.12;
+                        else if (beat < 0.36) pulse = (beat - 0.24) / 0.12 * 0.8;
+                        else if (beat < 0.5) pulse = 0.8 - (beat - 0.36) / 0.14 * 0.8;
+                        const shape = Math.sin(x * Math.PI);
+                        return pulse * shape;
+                    },
+                    (x, t) => {
+                        const phase = x * Math.PI * 2;
+                        const amp = (Math.sin(t * 2.2 + phase) + 1) / 2;
+                        const envelope = 0.4 + Math.sin(t * 0.6) * 0.2;
+                        return amp * (envelope + 0.4);
+                    }
+                ];
+                columns.forEach((segs, i) => {
+                    const x = i / (numCols - 1);
+                    const h1 = patterns[patternIdx](x, t);
+                    const h2 = blend > 0 ? patterns[nextIdx](x, t) : h1;
+                    const height = h1 * (1 - blend) + h2 * blend;
+                    const count = Math.max(1, Math.min(numSegs, Math.round(height * numSegs)));
+                    segs.forEach((s, j) => s.classList.toggle('active', j < count));
+                });
+            } else {
+                // Post-interaction resting state: single bottom row
+                columns.forEach(segs => segs.forEach((s, j) => s.classList.toggle('active', j === 0)));
+            }
+            requestAnimationFrame(loop);
+        }
+
+        function handlePtr(e) {
+            const el = document.elementFromPoint(e.clientX, e.clientY)?.closest('.block');
+            const prev = activePointers.get(e.pointerId);
+            const ni = el ? parseInt(el.dataset.idx) : null;
+            if (ni === prev) return;
+            activePointers.set(e.pointerId, ni);
+            recomputeActive();
+            if (ni !== null) playSound(ni);
+        }
+
+        stage.addEventListener('pointerdown', e => {
+            stage.setPointerCapture(e.pointerId);
+            activePointers.set(e.pointerId, null);
+            handlePtr(e);
+        });
+        stage.addEventListener('pointermove', e => {
+            if (activePointers.has(e.pointerId)) handlePtr(e);
+        });
+        const releasePtr = e => {
+            if (activePointers.delete(e.pointerId)) recomputeActive();
+        };
+        stage.addEventListener('pointerup', releasePtr);
+        stage.addEventListener('pointercancel', releasePtr);
+        stage.addEventListener('lostpointercapture', releasePtr);
+        loop();
+    </script>
+</body>
+</html>
