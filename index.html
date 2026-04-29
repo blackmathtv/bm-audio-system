@@ -679,6 +679,51 @@
         stage.addEventListener('pointerup', releasePtr);
         stage.addEventListener('pointercancel', releasePtr);
         stage.addEventListener('lostpointercapture', releasePtr);
+
+        // Notify a parent iframe host about intrinsic size changes.
+        function postEmbedSize() {
+            if (window.parent === window) return;
+            const docEl = document.documentElement;
+            const body = document.body;
+            const width = Math.ceil(Math.max(
+                docEl.scrollWidth,
+                docEl.offsetWidth,
+                body ? body.scrollWidth : 0,
+                body ? body.offsetWidth : 0
+            ));
+            const height = Math.ceil(Math.max(
+                docEl.scrollHeight,
+                docEl.offsetHeight,
+                body ? body.scrollHeight : 0,
+                body ? body.offsetHeight : 0
+            ));
+            window.parent.postMessage({
+                type: 'bm-audio-system:resize',
+                width,
+                height
+            }, '*');
+        }
+
+        const scheduleEmbedSizePost = (() => {
+            let rafId = null;
+            return () => {
+                if (rafId !== null) return;
+                rafId = requestAnimationFrame(() => {
+                    rafId = null;
+                    postEmbedSize();
+                });
+            };
+        })();
+
+        window.addEventListener('load', scheduleEmbedSizePost);
+        window.addEventListener('resize', scheduleEmbedSizePost);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(scheduleEmbedSizePost).catch(() => {});
+        }
+        const embedResizeObserver = new ResizeObserver(scheduleEmbedSizePost);
+        embedResizeObserver.observe(document.documentElement);
+        if (document.body) embedResizeObserver.observe(document.body);
+
         loop();
     </script>
 </body>
