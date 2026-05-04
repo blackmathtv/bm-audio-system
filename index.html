@@ -717,12 +717,24 @@
 
         window.addEventListener('load', scheduleEmbedSizePost);
         window.addEventListener('resize', scheduleEmbedSizePost);
+        window.addEventListener('pageshow', () => scheduleEmbedSizePost());
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') scheduleEmbedSizePost();
+        });
+        window.addEventListener('message', e => {
+            if (e.source !== window.parent) return;
+            const d = e.data || {};
+            if (d.type === 'bm-audio-system:request-size') scheduleEmbedSizePost();
+        });
         if (document.fonts && document.fonts.ready) {
             document.fonts.ready.then(scheduleEmbedSizePost).catch(() => {});
         }
         const embedResizeObserver = new ResizeObserver(scheduleEmbedSizePost);
         embedResizeObserver.observe(document.documentElement);
         if (document.body) embedResizeObserver.observe(document.body);
+
+        // Extra posts: late layout/fonts and hosts that attach postMessage listeners after our first send.
+        [0, 50, 150, 400, 1200].forEach(ms => setTimeout(scheduleEmbedSizePost, ms));
 
         loop();
     </script>
