@@ -16,7 +16,7 @@
         }
 
         :root {
-            --bg-color: #000000;
+            --bg-color: #151515;
             --text-color: #ffffff;
             --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             --display-family: 'PP Valve', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -27,7 +27,7 @@
             --bm-grey: #919491;
             --info-gap: 36px;
             --grid-size: 380px;
-            --eq-cols: 13;
+            --eq-cols: 17;
             --eq-segs: 6;
             --eq-seg-size: 14px;
             --eq-gap: 6px;
@@ -60,6 +60,7 @@
             gap: 100px;
             max-width: 1600px;
             padding: 40px;
+            transform: translateX(60px);
         }
 
         /* Fluid Spring Stage */
@@ -69,7 +70,6 @@
             height: var(--grid-size);
             touch-action: none;
             overflow: hidden;
-            box-shadow: 0 0 0 2px var(--bm-grey);
         }
 
         .block {
@@ -87,7 +87,7 @@
         .c-red { background-color: #E03535; }
         .c-pink { background-color: #FFD6DF; }
         .c-green { background-color: #008535; }
-        .c-black { background-color: #000000; box-shadow: inset 0 0 0 2px #1a1a1a; }
+        .c-black { background-color: #000000; }
         .c-linen { background-color: #EFE1E0; }
         .c-purple { background-color: #BA9BC9; }
         .c-blue { background-color: #0096DE; }
@@ -113,8 +113,7 @@
             position: relative;
             display: flex;
             flex-direction: column;
-            gap: 40px;
-            padding-left: 96px;
+            gap: 100px;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
@@ -127,15 +126,6 @@
             pointer-events: auto;
         }
 
-        .info-swatch {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
-        }
-
         .info-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -143,10 +133,25 @@
             align-items: start;
         }
 
+        .info-row-full {
+            grid-template-columns: 1fr;
+        }
+
         .info-group {
             display: flex;
             flex-direction: column;
             gap: 6px;
+        }
+
+        .info-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-chip {
+            width: 16px;
+            height: 16px;
         }
 
         /* Type scale */
@@ -177,39 +182,12 @@
             font-variant-numeric: tabular-nums;
         }
 
-        .info-spec {
-            font-family: var(--mono-family);
-            font-size: 13px;
-            font-weight: 400;
-            line-height: 1.3;
-            color: var(--text-secondary);
-            font-variant-numeric: tabular-nums;
-        }
-
-        .info-subhead {
-            font-size: 20px;
-            font-weight: 500;
-            letter-spacing: -0.01em;
-            line-height: 1.2;
-            color: var(--text-primary);
-        }
-
         .personality-desc {
-            font-size: 15px;
-            line-height: 1.5;
-            color: var(--text-secondary);
-            min-height: calc(1.5em * 2);
-        }
-
-        .neighbor-swatches {
-            display: flex;
-            gap: 6px;
-        }
-
-        .neighbor-swatch {
-            width: 18px;
-            height: 18px;
-            border-radius: 4px;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.35;
+            color: var(--text-primary);
         }
 
         /* Initial Messaging */
@@ -250,18 +228,16 @@
         .visualizer-outer {
             width: var(--eq-width);
             height: var(--eq-height);
-            background-color: #1e1e1e;
-            padding: var(--eq-pad);
+            background-color: transparent;
             display: flex;
             box-sizing: border-box;
             margin-top: auto;
-            transform: translateY(calc(-1 * (var(--eq-pad) - 2px)));
         }
 
         .visualizer-inner {
             width: 100%;
             height: 100%;
-            background-color: #121212;
+            background-color: #000000;
             padding: 0 var(--eq-gap);
             display: flex;
             align-items: flex-end;
@@ -328,7 +304,6 @@
             }
 
             .color-info {
-                padding-left: 72px;
                 gap: 28px;
             }
 
@@ -336,16 +311,11 @@
                 column-gap: 20px;
             }
 
-            .info-swatch {
-                width: 48px;
-                height: 48px;
-            }
-
             .info-name {
                 font-size: 24px;
             }
 
-            .info-subhead {
+            .personality-desc {
                 font-size: 18px;
             }
         }
@@ -363,8 +333,6 @@
                 </div>
 
                 <div class="color-info" id="colorInfo">
-                    <div class="info-swatch" id="infoSwatch"></div>
-
                     <div class="info-row">
                         <div class="info-group">
                             <div class="info-label">NAME</div>
@@ -372,30 +340,17 @@
                         </div>
                         <div class="info-group">
                             <div class="info-label">VALUE</div>
-                            <div class="info-hex" id="infoHex"></div>
+                            <div class="info-value">
+                                <div class="info-hex" id="infoHex"></div>
+                                <div class="info-chip" id="infoChip"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="info-row">
-                        <div class="info-group">
-                            <div class="info-label">SOUND</div>
-                            <div class="info-spec" id="infoSound"></div>
-                        </div>
-                        <div class="info-group">
-                            <div class="info-label">GRID</div>
-                            <div class="info-spec" id="infoGrid"></div>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
+                    <div class="info-row info-row-full">
                         <div class="info-group">
                             <div class="info-label">PERSONALITY</div>
-                            <div class="info-subhead" id="infoPersLabel"></div>
                             <div class="personality-desc" id="infoPersDesc"></div>
-                        </div>
-                        <div class="info-group">
-                            <div class="info-label">NEIGHBORS</div>
-                            <div class="neighbor-swatches" id="infoNeighbors"></div>
                         </div>
                     </div>
                 </div>
@@ -409,19 +364,19 @@
 
     <script>
         const BLOCK_DATA = [
-            { id: "white", name: "White", hex: "#FFFFFF", row: 0, col: 0, span: 2, freq: 880, type: "sine", decay: 0.4, file: "audio/3 White.wav", personality: { label: "Feather", desc: "Weightless. Drifts like dust in light." } },
-            { id: "beige", name: "Beige", hex: "#C7B299", row: 0, col: 2, span: 2, freq: 330, type: "triangle", decay: 0.5, file: "audio/10 Beige.wav", personality: { label: "Stone", desc: "Heavy. Moves slow, settles deep." } },
-            { id: "grey", name: "Grey", hex: "#919491", row: 0, col: 4, span: 2, freq: 220, type: "sawtooth", decay: 0.6, file: "audio/2 Grey.wav", personality: { label: "Fog", desc: "Drifts. Fades into position." } },
-            { id: "yellow", name: "Yellow", hex: "#FFEE00", row: 1, col: 0, span: 2, freq: 660, type: "square", decay: 0.25, file: "audio/4 Yellow.wav", personality: { label: "Spark", desc: "Quick snap. Electric return." } },
-            { id: "carrot", name: "Carrot", hex: "#FF6600", row: 1, col: 2, span: 1, freq: 440, type: "sawtooth", decay: 0.35, file: "audio/6 Carrot.wav", personality: { label: "Flame", desc: "Wobbly heat. Restless energy." } },
-            { id: "red", name: "Red", hex: "#E03535", row: 1, col: 3, span: 1, freq: 523, type: "square", decay: 0.2, file: "audio/12 Red.wav", personality: { label: "Pulse", desc: "Sharp. Snaps back hard." } },
-            { id: "pink", name: "Pink", hex: "#FFD6DF", row: 1, col: 4, span: 1, freq: 784, type: "sine", decay: 0.5, file: "audio/9 Pink.wav", personality: { label: "Cloud", desc: "Soft drift. Gentle return." } },
-            { id: "green", name: "Green", hex: "#008535", row: 1, col: 5, span: 1, freq: 196, type: "triangle", decay: 0.6, file: "audio/11 Green.wav", personality: { label: "Root", desc: "Grounded. Barely moves, anchored." } },
-            { id: "black", name: "Black", hex: "#000000", row: 2, col: 0, span: 2, freq: 110, type: "sawtooth", decay: 0.7, file: "audio/1 Black.wav", personality: { label: "Void", desc: "Absorbs force. Barely stirs." } },
-            { id: "linen", name: "Light Beige", hex: "#EFE1E0", row: 2, col: 2, span: 1, freq: 587, type: "sine", decay: 0.4, file: "audio/7 Linen.wav", personality: { label: "Silk", desc: "Smooth glide. Graceful settle." } },
-            { id: "purple", name: "Purple", hex: "#BA9BC9", row: 2, col: 3, span: 1, freq: 698, type: "sine", decay: 0.5, file: "audio/8 Purple.wav", personality: { label: "Dream", desc: "Floaty. Slow, ethereal movement." } },
-            { id: "blue", name: "Blue", hex: "#0096DE", row: 2, col: 4, span: 1, freq: 392, type: "triangle", decay: 0.35, file: "audio/5 Blue.wav", personality: { label: "Wave", desc: "Fluid oscillation. Rides back in." } },
-            { id: "universe", name: "BM Universe", hex: "MIXED", row: 2, col: 5, span: 1, freq: 440, type: "sine", decay: 0.6, file: "audio/13 BM Universe.wav", gradient: "linear-gradient(to right, #FFEE00, #FFB905, #FF6600, #E77946, #BB9BCA, #5C8ECB, #0288AB, #028535)", personality: { label: "Prism", desc: "Unpredictable. Refracts force in wild angles." } }
+            { id: "white", name: "White", hex: "#FFFFFF", row: 0, col: 0, span: 2, freq: 880, type: "sine", decay: 0.4, file: "audio/Feather.wav", personality: { label: "Feather", desc: "Smooth and puffy." } },
+            { id: "beige", name: "Beige", hex: "#C7B299", row: 0, col: 2, span: 2, freq: 330, type: "triangle", decay: 0.5, file: "audio/Stone.wav", personality: { label: "Stone", desc: "Grounded and strong. Reliable." } },
+            { id: "grey", name: "Grey", hex: "#919491", row: 0, col: 4, span: 2, freq: 220, type: "sawtooth", decay: 0.6, file: "audio/Fog.wav", personality: { label: "Fog", desc: "A drifter." } },
+            { id: "yellow", name: "Yellow", hex: "#FFEE00", row: 1, col: 0, span: 2, freq: 660, type: "square", decay: 0.25, file: "audio/Spark.wav", personality: { label: "Spark", desc: "A jolt of electricity. Inspirational." } },
+            { id: "carrot", name: "Carrot", hex: "#FF6600", row: 1, col: 2, span: 1, freq: 440, type: "sawtooth", decay: 0.35, file: "audio/Carrot.wav", personality: { label: "Carrot", desc: "Fresh. Juicy. Bright." } },
+            { id: "red", name: "Red", hex: "#E03535", row: 1, col: 3, span: 1, freq: 523, type: "square", decay: 0.2, file: "audio/Pulse.wav", personality: { label: "Pulse", desc: "Rhythmic and resonant." } },
+            { id: "pink", name: "Pink", hex: "#FFD6DF", row: 1, col: 4, span: 1, freq: 784, type: "sine", decay: 0.5, file: "audio/BubbleGum.wav", personality: { label: "Bubble Gum", desc: "Pop." } },
+            { id: "green", name: "Green", hex: "#008535", row: 1, col: 5, span: 1, freq: 196, type: "triangle", decay: 0.6, file: "audio/Vine.wav", personality: { label: "Vine", desc: "Aspiring. Climbing." } },
+            { id: "black", name: "Black", hex: "#000000", row: 2, col: 0, span: 2, freq: 110, type: "sawtooth", decay: 0.7, file: "audio/Void.wav", personality: { label: "Void", desc: "Dark and mysterious. Magnetic." } },
+            { id: "linen", name: "Light Beige", hex: "#EFE1E0", row: 2, col: 2, span: 1, freq: 587, type: "sine", decay: 0.4, file: "audio/Silk.wav", personality: { label: "Silk", desc: "Ethereal. Entrancing." } },
+            { id: "purple", name: "Purple", hex: "#BA9BC9", row: 2, col: 3, span: 1, freq: 698, type: "sine", decay: 0.5, file: "audio/Dream.wav", personality: { label: "Dream", desc: "An old friend. Familiar." } },
+            { id: "blue", name: "Blue", hex: "#0096DE", row: 2, col: 4, span: 1, freq: 392, type: "triangle", decay: 0.35, file: "audio/Wave.wav", personality: { label: "Wave", desc: "Careening. Surging and disruptive." } },
+            { id: "universe", name: "BM Universe", hex: "MIXED", row: 2, col: 5, span: 1, freq: 440, type: "sine", decay: 0.6, file: "audio/Universe.wav", gradient: "linear-gradient(to right, #FFEE00, #FFB905, #FF6600, #E77946, #BB9BCA, #5C8ECB, #0288AB, #028535)", personality: { label: "Universe", desc: "Vast. Evolving. Unpredictable." } }
         ];
 
         const VIZ_PALETTE = ["#028535","#0096DD","#FD322B","#FF6600","#FFEE00","#919491","#F5F5F7","#F5F5F7"];
@@ -441,14 +396,10 @@
         const stage = document.getElementById('stage');
         const instructionGroup = document.getElementById('instructionGroup');
         const colorInfo = document.getElementById('colorInfo');
-        const infoSwatch = document.getElementById('infoSwatch');
         const infoName = document.getElementById('infoName');
-        const infoSound = document.getElementById('infoSound');
-        const infoGrid = document.getElementById('infoGrid');
         const infoHex = document.getElementById('infoHex');
-        const infoPersLabel = document.getElementById('infoPersLabel');
+        const infoChip = document.getElementById('infoChip');
         const infoPersDesc = document.getElementById('infoPersDesc');
-        const infoNeighbors = document.getElementById('infoNeighbors');
 
         const blocks = BLOCK_DATA.map((b, i) => {
             const el = document.createElement('div');
@@ -484,24 +435,10 @@
             const b = BLOCK_DATA[idx];
             instructionGroup.classList.add('hidden');
             colorInfo.classList.add('visible');
-            infoSwatch.className = `info-swatch c-${b.id}`;
             infoName.textContent = b.name;
-            infoSound.textContent = `${b.freq}hz ${b.type}`;
-            infoGrid.textContent = `R${b.row+1} C${b.col+1}${b.span>1 ? '-'+(b.col+b.span) : ''}`;
             infoHex.textContent = b.hex;
-            infoPersLabel.textContent = b.personality.label;
+            infoChip.className = `info-chip c-${b.id}`;
             infoPersDesc.textContent = b.personality.desc;
-            infoNeighbors.innerHTML = '';
-            const bCols = Array.from({length: b.span}, (_, i) => b.col + i);
-            BLOCK_DATA.forEach((o, i) => {
-                if (i === idx) return;
-                const oCols = Array.from({length: o.span}, (_, i) => o.col + i);
-                if (bCols.some(c => oCols.includes(c)) && Math.abs(b.row - o.row) <= 1 || (b.row === o.row && Math.abs(b.col - o.col) <= b.span)) {
-                    const s = document.createElement('div');
-                    s.className = `neighbor-swatch c-${o.id}`;
-                    infoNeighbors.appendChild(s);
-                }
-            });
             try {
                 const buf = await loadBuffer(b);
                 const now = audioCtx.currentTime;
