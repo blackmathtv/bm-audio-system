@@ -59,8 +59,12 @@
             align-items: flex-start;
             gap: 100px;
             max-width: 1600px;
-            padding: 40px;
+            padding: 100px 40px;
             transform: translateX(60px);
+            @media (max-width: 900px) {
+                transform: none;
+                padding: 40px
+            }
         }
 
         /* Fluid Spring Stage */
@@ -198,6 +202,17 @@
             transition: opacity 0.3s ease;
             position: absolute;
             top: 0;
+            @media (max-width: 900px) {
+                position: relative;
+                width: 100%;
+                max-width: none;
+                flex: 0 0 100%;
+                .main-msg {
+                    width: 100%;
+                    font-size: clamp(24px, 10vw, 45px);
+                    max-width: none;
+                }
+            }
         }
 
         .instruction-group.hidden {
