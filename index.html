@@ -35,7 +35,6 @@
             --eq-width: calc(var(--eq-cols) * var(--eq-seg-size) + (var(--eq-cols) + 1) * var(--eq-gap) + 2 * var(--eq-pad));
             --eq-height: calc(var(--eq-segs) * var(--eq-seg-size) + 2 * var(--eq-pad));
         }
-
         body {
             margin: 0;
             padding: 0;
@@ -218,6 +217,9 @@
         .instruction-group.hidden {
             opacity: 0;
             pointer-events: none;
+            @media (max-width: 900px) {
+                display: none;
+            }
         }
 
         .main-msg {
@@ -406,7 +408,7 @@
         }
         const weights = { rows: [1, 1, 1], cols: [1, 1, 1, 1, 1, 1], rv: [0,0,0], cv: [0,0,0,0,0,0] };
         const RESP = 0.38, DAMP = 0.82, DT = 0.016, K = (4 * Math.PI * Math.PI) / (RESP * RESP), C = (4 * Math.PI * DAMP) / RESP, SCALE_FACTOR = 1.65;
-        const GRID_SIZE = 380;
+        const DEFAULT_GRID_PX = 380;
 
         const stage = document.getElementById('stage');
         const instructionGroup = document.getElementById('instructionGroup');
@@ -516,15 +518,16 @@
                 weights.cv[i] += f * DT; weights.cols[i] += weights.cv[i] * DT;
             }
             const rSum = weights.rows.reduce((a, b) => a + b, 0), cSum = weights.cols.reduce((a, b) => a + b, 0);
+            const gridPx = stage.clientWidth || DEFAULT_GRID_PX;
             let curY = 0;
             const rowOffsets = weights.rows.map(w => {
-                const h = (w / rSum) * GRID_SIZE;
+                const h = (w / rSum) * gridPx;
                 const y = curY; curY += h;
                 return { y, h };
             });
             let curX = 0;
             const colOffsets = weights.cols.map(w => {
-                const wd = (w / cSum) * GRID_SIZE;
+                const wd = (w / cSum) * gridPx;
                 const x = curX; curX += wd;
                 return { x, wd };
             });
