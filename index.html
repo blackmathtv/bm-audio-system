@@ -336,6 +336,28 @@
                 font-size: 18px;
             }
         }
+
+        /* Narrow phones: full-width EQ, fewer columns, fluid segment size */
+        @media (max-width: 400px) {
+            :root {
+                --eq-cols: 12;
+                --eq-gap: 5px;
+                --eq-pad: 4px;
+                --eq-seg-size: max(
+                    8px,
+                    calc(
+                        (100vw - 48px - (var(--eq-cols) + 1) * var(--eq-gap) - 2 * var(--eq-pad)) /
+                            var(--eq-cols)
+                    )
+                );
+            }
+
+            .visualizer-outer {
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -484,23 +506,49 @@
         }
 
         const vizInner = document.getElementById('visualizer');
-        const rootStyle = getComputedStyle(document.documentElement);
-        const numCols = parseInt(rootStyle.getPropertyValue('--eq-cols')) || 9;
-        const numSegs = parseInt(rootStyle.getPropertyValue('--eq-segs')) || 6;
         const segColor = j => VIZ_PALETTE[Math.min(j, VIZ_PALETTE.length - 1)];
-        const columns = Array.from({length: numCols}, () => {
-            const col = document.createElement('div');
-            col.className = 'viz-column';
-            const segs = Array.from({length: numSegs}, (_, j) => {
-                const s = document.createElement('div');
-                s.className = 'viz-segment';
-                s.style.backgroundColor = segColor(j);
-                col.appendChild(s);
-                return s;
+        let numCols = 17;
+        let numSegs = 6;
+        let columns = [];
+        let vizLayoutKey = '';
+
+        function readVizLayout() {
+            const rs = getComputedStyle(document.documentElement);
+            return {
+                numCols: parseInt(rs.getPropertyValue('--eq-cols').trim(), 10) || 17,
+                numSegs: parseInt(rs.getPropertyValue('--eq-segs').trim(), 10) || 6
+            };
+        }
+
+        function buildVisualizerColumns() {
+            const { numCols: nc, numSegs: ns } = readVizLayout();
+            numCols = nc;
+            numSegs = ns;
+            vizInner.replaceChildren();
+            columns = Array.from({ length: numCols }, () => {
+                const col = document.createElement('div');
+                col.className = 'viz-column';
+                const segs = Array.from({ length: numSegs }, (_, j) => {
+                    const s = document.createElement('div');
+                    s.className = 'viz-segment';
+                    s.style.backgroundColor = segColor(j);
+                    col.appendChild(s);
+                    return s;
+                });
+                vizInner.appendChild(col);
+                return segs;
             });
-            vizInner.appendChild(col);
-            return segs;
-        });
+        }
+
+        function syncVisualizerColumns() {
+            const { numCols: nc, numSegs: ns } = readVizLayout();
+            const key = `${nc},${ns}`;
+            if (key === vizLayoutKey && columns.length === nc) return;
+            vizLayoutKey = key;
+            buildVisualizerColumns();
+        }
+
+        syncVisualizerColumns();
 
         function loop() {
             const targetR = [1, 1, 1], targetC = [1, 1, 1, 1, 1, 1];
@@ -595,8 +643,9 @@
                         return amp * (envelope + 0.4);
                     }
                 ];
+                const xDenom = numCols > 1 ? numCols - 1 : 1;
                 columns.forEach((segs, i) => {
-                    const x = i / (numCols - 1);
+                    const x = i / xDenom;
                     const h1 = patterns[patternIdx](x, t);
                     const h2 = blend > 0 ? patterns[nextIdx](x, t) : h1;
                     const height = h1 * (1 - blend) + h2 * blend;
@@ -665,6 +714,7 @@
                 if (rafId !== null) return;
                 rafId = requestAnimationFrame(() => {
                     rafId = null;
+                    syncVisualizerColumns();
                     postEmbedSize();
                 });
             };
